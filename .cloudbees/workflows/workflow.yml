@@ -1,0 +1,61 @@
+name: scan-build-push-harbor
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  scm-token-own: read
+  scm-token-org: read
+
+jobs:
+  build-crane-staging:
+    if: ${{ vars.CLUSTER_ENVIRONMENT == 'staging' }}
+    steps:
+      - name: Get sourcecode
+        uses: cloudbees-io/checkout@v1
+      - id: build
+        name: Build, scan and push to test harbor
+        uses: calculi-corp/cb-internal-shared-actions/build/action@v1
+        with:
+          kaniko-build: "true"
+          trivy-scan-container: "true"
+          registry-url: ${{ vars.STAGING_DOCKER_REGISTRY }}
+          registry-username: ${{ secrets.STAGING_DOCKER_USERNAME }}
+          registry-password: ${{ secrets.STAGING_DOCKER_PASSWORD }}
+          registry-image-name: testing/crane-docker-image
+          dockerfile-path: Dockerfile
+  build-crane-preprod:
+    if: ${{ vars.CLUSTER_ENVIRONMENT == 'preprod' }}
+    steps:
+      - name: Get sourcecode
+        uses: cloudbees-io/checkout@v1
+      - id: build
+        name: Build, scan and push to test harbor
+        uses: calculi-corp/cb-internal-shared-actions/build/action@v1
+        with:
+          kaniko-build: "true"
+          trivy-scan-container: "true"
+          registry-url: ${{ vars.STAGING_DOCKER_REGISTRY }}
+          registry-username: ${{ secrets.STAGING_DOCKER_USERNAME }}
+          registry-password: ${{ secrets.STAGING_DOCKER_PASSWORD }}
+          registry-image-name: preprod/crane-docker-image
+          dockerfile-path: Dockerfile
+  build-crane-prod:
+    if: ${{ vars.CLUSTER_ENVIRONMENT == 'prod' }}
+    steps:
+      - name: Get sourcecode
+        uses: cloudbees-io/checkout@v1
+      - id: build
+        name: Build, scan and push to test harbor
+        uses: calculi-corp/cb-internal-shared-actions/build/action@v1
+        with:
+          kaniko-build: "true"
+          trivy-scan-container: "true"
+          registry-url: ${{ vars.STAGING_DOCKER_REGISTRY }}
+          registry-username: ${{ secrets.STAGING_DOCKER_USERNAME }}
+          registry-password: ${{ secrets.STAGING_DOCKER_PASSWORD }}
+          registry-image-name: staging/crane-docker-image
+          dockerfile-path: Dockerfile
